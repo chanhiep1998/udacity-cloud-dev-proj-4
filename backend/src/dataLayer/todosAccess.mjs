@@ -69,7 +69,6 @@ export class TodosAccess {
             TableName: this.todosTable,
             Key: { todoId, userId }
         })
-        logger.info("Deleted", deleted)
         return deleted
     }
 }

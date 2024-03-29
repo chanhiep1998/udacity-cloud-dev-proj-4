@@ -1,3 +1,4 @@
+import Axios from 'axios'
 import jsonwebtoken from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger.mjs'
 import { JwksClient } from 'jwks-rsa'
@@ -49,22 +50,16 @@ export async function handler(event) {
 
 async function verifyToken(authHeader) {
     const token = getToken(authHeader)
-    const jwt = jsonwebtoken.decode(token, { complete: false })
-    jsonwebtoken.verify(token, getKey, { complete: false }, function (err, decoded) {
-        if (err) {
-            throw new Error(err)
-        }
-        logger.info(`User with ${decoded} has been verified`)
-    })
-    return jwt
+    const jwt = jsonwebtoken.decode(token, { complete: true })
+    const key = await getKey(jwt.header.kid)
+    const decoded = jsonwebtoken.verify(token, key, { complete: false })
+    return decoded
 }
 
-function getKey(header) {
-    client.getSigningKey(header.kid)
-        .then(key => {
-            var signingKey = key.publicKey || key.rsaPublicKey
-            return signingKey
-        })
+async function getKey(kid) {
+    const key = await client.getSigningKey(kid)
+    let signingKey = key.publicKey || key.rsaPublicKey
+    return signingKey
 }
 
 function getToken(authHeader) {
